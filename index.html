@@ -131,7 +131,7 @@
             transform: scale(1.05);
         }
 
-        /* 🚀 Logo Styling 🚀 */
+        /* 🚀 Logo Settings: Ye Logo Ko Start Screen Ke Upar Sahi Se Set Karega 🚀 */
         .site-logo {
             max-width: 110px;
             height: auto;
@@ -154,8 +154,8 @@
         </div>
 
         <div id="screen-overlay">
-            <!-- 🚀 Logo image with Github fallback link 🚀 -->
-            <img src="https://githubusercontent.com" alt="Galaxy Fighter Logo" class="site-logo"><br>
+            <!-- 🚀 Sahi jagah par Logo add kar diya hai 🚀 -->
+            <img src="logo.jpg" alt="Galaxy Fighter Logo" class="site-logo"><br>
             
             <div id="overlay-title">GALAXY FIGHTER</div>
             <div id="overlay-text">Drag anywhere to pilot.<br>Advanced ship configuration loaded.</div>
@@ -237,7 +237,6 @@
             scoreDisplay.innerText = score;
             livesDisplay.innerText = "❤️❤️❤️";
             bossBar.style.display = "none";
-            spawnEnemyWave();
         }
 
         let isDragging = false;
@@ -372,7 +371,9 @@
                 }
 
                 if (Date.now() - boss.lastShot > 1200) {
-                    enemyBullets.push({ x: boss.x + boss.width / 2, y: boss.y + boss.height, w: 8, h: 18, speed: 4.5 });
+                    enemyBullets.push({ x: boss.x + boss.width / 2, y: boss.y + boss.height, width: 8, height: 18, speed: 4.5 });
+                    enemyBullets.push({ x: boss.x + 20, y: boss.y + boss.height - 10, width: 8, height: 18, speed: 4 });
+                    enemyBullets.push({ x: boss.x + boss.width - 28, y: boss.y + boss.height - 10, width: 8, height: 18, speed: 4 });
                     boss.lastShot = Date.now();
                 }
 
@@ -404,7 +405,7 @@
                 }
 
                 if (Date.now() - e.lastShot > e.shootInterval && e.y > 0) {
-                    enemyBullets.push({ x: e.x + e.width / 2 - 3, y: e.y + e.height, w: 6, h: 14, speed: 4 });
+                    enemyBullets.push({ x: e.x + e.width / 2 - 3, y: e.y + e.height, width: 6, height: 14, speed: 4 });
                     e.lastShot = Date.now();
                 }
 
@@ -431,7 +432,8 @@
                 p.y += 2;
                 if (p.y > canvas.height + 30) powerUps.splice(index, 1);
                 else if (checkCollision(p, player)) {
-                    if (p.type === 'weapon' ? (weaponLevel < 3 && weaponLevel++) : (lives < 3 && (lives++, updateLivesUI())));
+                    if (p.type === 'weapon') { if (weaponLevel < 3) weaponLevel++; }
+                    else { if (lives < 3) { lives++; updateLivesUI(); } }
                     powerUps.splice(index, 1);
                 }
             });
@@ -452,7 +454,7 @@
 
         function updateLivesUI() {
             let hearts = "";
-            for (let i = 0; i < lives; i++) hearts += "❤️";
+            for (let i = 0; i < lives; i++) hearts += "❤️❤️❤️"[i * 2] + "❤️❤️❤️"[i * 2 + 1];
             livesDisplay.innerText = hearts || "☠️";
         }
 
@@ -494,7 +496,7 @@
             bullets.forEach(b => ctx.fillRect(b.x, b.y, b.w, b.h));
 
             ctx.fillStyle = "#ff3333";
-            enemyBullets.forEach(eb => ctx.fillRect(eb.x, eb.y, eb.w || eb.width, eb.h || eb.height));
+            enemyBullets.forEach(eb => ctx.fillRect(eb.x, eb.y, eb.width, eb.height));
 
             enemies.forEach(e => {
                 ctx.fillStyle = "#a900ff";

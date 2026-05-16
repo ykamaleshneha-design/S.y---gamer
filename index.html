@@ -218,7 +218,7 @@
             scoreDisplay.innerText = score;
             livesDisplay.innerText = "❤️❤️❤️";
             bossBar.style.display = "none";
-            spawnEnemyWave();
+            spawnEnemyWave(); // Pehle waves yahan setup hoti thi
         }
 
         // Smooth Drag Control System
@@ -258,11 +258,13 @@
                 initGameObjects();
                 gameActive = true;
                 overlay.style.display = "none";
+                spawnEnemyWave(); // 🚀 FIX: Game shuru hote hi dushman aane lagenge
                 animate();
             } else if (isGameOver) {
                 initGameObjects();
                 isGameOver = false;
                 overlay.style.display = "none";
+                spawnEnemyWave(); // 🚀 FIX: Restart karne par bhi dushman aayenge
             }
         }
 

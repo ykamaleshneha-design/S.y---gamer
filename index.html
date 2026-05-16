@@ -1,6 +1,7 @@
 <!DOCTYPE html>
 <html lang="en">
-<head><meta name="google-site-verification" content="BUde9aQEfbyo5MVQRUOovATAHsIU8UBgguTTJa-_WuY" />
+<head>
+    <meta name="google-site-verification" content="BUde9aQEfbyo5MVQRUOovATAHsIU8UBgguTTJa-_WuY" />
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
     
@@ -11,10 +12,7 @@
     <meta name="author" content="Suraj Yadav">
 
     <style>
-        body {<div style="text-align: center; margin-top: 10px;">
-  <img src="logo.jpg" alt="Galaxy Fighter Logo" style="max-width: 200px; height: auto;">
-</div>
-
+        body {
             margin: 0;
             background: #010105;
             color: white;
@@ -52,6 +50,7 @@
             font-weight: bold;
             text-shadow: 0 0 10px #00d2ff;
             pointer-events: none;
+            z-index: 5;
         }
 
         #boss-health-bar {
@@ -66,6 +65,7 @@
             border-radius: 6px;
             overflow: hidden;
             box-shadow: 0 0 10px #ff0000;
+            z-index: 5;
         }
 
         #boss-fill {
@@ -75,7 +75,6 @@
         }
 
         #screen-overlay {
-            display: none;
             position: absolute;
             top: 50%;
             left: 50%;
@@ -87,6 +86,7 @@
             border: 2px solid #00d2ff;
             min-width: 280px;
             box-shadow: 0 0 30px rgba(0, 210, 255, 0.6);
+            z-index: 20;
         }
 
         #overlay-title {
@@ -130,6 +130,15 @@
             box-shadow: 0 0 25px #fff;
             transform: scale(1.05);
         }
+
+        /* 🚀 Logo Settings: Ye Logo Ko Start Screen Ke Upar Sahi Se Set Karega 🚀 */
+        .site-logo {
+            max-width: 110px;
+            height: auto;
+            margin-bottom: 15px;
+            display: inline-block;
+            pointer-events: none;
+        }
     </style>
 </head>
 <body>
@@ -145,6 +154,9 @@
         </div>
 
         <div id="screen-overlay">
+            <!-- 🚀 Sahi jagah par Logo add kar diya hai 🚀 -->
+            <img src="logo.jpg" alt="Galaxy Fighter Logo" class="site-logo"><br>
+            
             <div id="overlay-title">GALAXY FIGHTER</div>
             <div id="overlay-text">Drag anywhere to pilot.<br>Advanced ship configuration loaded.</div>
             <div id="credits">Developed by Suraj Yadav</div>
@@ -189,12 +201,10 @@
         let powerUps = [];
         let boss = null;
 
-        // Generate Stars Background
         for(let i=0; i<50; i++) {
             stars.push({ x: Math.random()*canvas.width, y: Math.random()*canvas.height, size: Math.random()*2+1, speed: Math.random()*1.5+0.5 });
         }
 
-        // Space Planets Setup
         function initPlanets() {
             planets = [
                 { x: canvas.width * 0.2, y: -150, radius: 60, color1: "#4b0082", color2: "#9400d3", speed: 0.3, spots: true },
@@ -227,10 +237,8 @@
             scoreDisplay.innerText = score;
             livesDisplay.innerText = "❤️❤️❤️";
             bossBar.style.display = "none";
-            spawnEnemyWave();
         }
 
-        // Smooth Drag Control System
         let isDragging = false;
         let touchOffsetX = 0;
         let touchOffsetY = 0;
@@ -251,359 +259,276 @@
             player.x = touch.clientX - touchOffsetX;
             player.y = touch.clientY - touchOffsetY;
 
-            // Boundaries
             if (player.x < 0) player.x = 0;
             if (player.x > canvas.width - player.width) player.x = canvas.width - player.width;
             if (player.y < canvas.height * 0.3) player.y = canvas.height * 0.3;
             if (player.y > canvas.height - player.height) player.y = canvas.height - player.height;
         });
 
-        canvas.addEventListener("touchend", () => {
-            isDragging = false;
-        });
+        canvas.addEventListener("touchend", () => { isDragging = false; });
 
-        // PC Controls support
-        document.addEventListener("keydown", (e) => {
-            if (!gameActive || isGameOver) return;
-            if (e.key === "ArrowLeft" && player.x > 0) player.x -= 18;
-            if (e.key === "ArrowRight" && player.x < canvas.width - player.width) player.x += 18;
-            if (e.key === "ArrowUp" && player.y > canvas.height*0.3) player.y -= 18;
-            if (e.key === "ArrowDown" && player.y < canvas.height - player.height) player.y += 18;
-        });
-
-        function spawnEnemyWave() {
-            if (bossActive || isGameOver) return;
-            const rows = 3;
-            const cols = Math.floor(canvas.width / 65);
-            const startX = (canvas.width - (cols * 55)) / 2;
-
-            for(let r=0; r<rows; r++) {
-                for(let c=0; c<cols; c++) {
-                    enemies.push({
-                        x: startX + c * 55,
-                        y: 80 + r * 45,
-                        width: 38,
-                        height: 32,
-                        direction: 1,
-                        stepX: 1.2,
-                        lastFired: Date.now() + Math.random()*2000
-                    });
-                }
+        function startGame() {
+            if (!gameActive) {
+                initGameObjects();
+                gameActive = true;
+                overlay.style.display = "none";
+                animate();
+            } else if (isGameOver) {
+                initGameObjects();
+                isGameOver = false;
+                overlay.style.display = "none";
             }
         }
 
-        function triggerBossFight() {
+        function spawnEnemyWave() {
+            if (!gameActive || isGameOver || bossActive) return;
+            let count = 3 + Math.floor(score / 15);
+            if (count > 8) count = 8;
+
+            if (score > 0 && score % 40 === 0 && !boss) {
+                spawnBoss();
+                return;
+            }
+
+            for (let i = 0; i < count; i++) {
+                enemies.push({
+                    x: Math.random() * (canvas.width - 40),
+                    y: -50 - (Math.random() * 200),
+                    width: 40,
+                    height: 40,
+                    speed: 1.5 + (Math.random() * 2) + (score * 0.02),
+                    hp: 1 + Math.floor(score / 50),
+                    lastShot: 0,
+                    shootInterval: 2000 + Math.random() * 1500
+                });
+            }
+        }
+
+        function spawnBoss() {
             bossActive = true;
-            enemies = [];
+            bossBar.style.display = "block";
             boss = {
                 x: canvas.width / 2 - 60,
                 y: -100,
                 width: 120,
-                height: 75,
-                health: 120,
-                maxHealth: 120,
-                speedX: 2.2,
-                direction: 1,
-                lastFired: 0
+                height: 80,
+                maxHp: 20 + (score * 0.5),
+                hp: 20 + (score * 0.5),
+                speed: 2,
+                dir: 1,
+                lastShot: 0
             };
-            bossBar.style.display = "block";
-            bossFill.style.width = "100%";
-        }
-
-        function autoFire() {
-            const now = Date.now();
-            if(now - player.lastShot > player.shootDelay) {
-                if(weaponLevel === 1) {
-                    bullets.push({ x: player.x + player.width/2 - 3, y: player.y - 8, width: 6, height: 18 });
-                } else {
-                    bullets.push({ x: player.x + 6, y: player.y + 12, width: 6, height: 18 });
-                    bullets.push({ x: player.x + player.width - 12, y: player.y + 12, width: 6, height: 18 });
-                }
-                player.lastShot = now;
-            }
-        }
-
-        function isColliding(a, b) {
-            return a.x < b.x + b.width && a.x + a.width > b.x && a.y < b.y + b.height && a.y + a.height > b.y;
         }
 
         function update() {
-            if(!gameActive || isGameOver) return;
-
-            stars.forEach(star => {
-                star.y += star.speed;
-                if(star.y > canvas.height) { star.y = 0; star.x = Math.random()*canvas.width; }
+            stars.forEach(s => {
+                s.y += s.speed;
+                if (s.y > canvas.height) { s.y = 0; s.x = Math.random() * canvas.width; }
             });
 
             planets.forEach(p => {
                 p.y += p.speed;
-                if(p.y - p.radius > canvas.height) {
-                    p.y = -p.radius * 3;
-                    p.x = Math.random() * (canvas.width - p.radius * 2) + p.radius;
+                if (p.y > canvas.height + p.radius * 2) { p.y = -p.radius * 2; p.x = Math.random() * canvas.width; }
+            });
+
+            if (gameActive && !isGameOver) {
+                const now = Date.now();
+                if (now - player.lastShot > player.shootDelay) {
+                    if (weaponLevel === 1) {
+                        bullets.push({ x: player.x + player.width / 2 - 3, y: player.y, w: 6, h: 15, speed: 7 });
+                    } else if (weaponLevel === 2) {
+                        bullets.push({ x: player.x + 10, y: player.y, w: 6, h: 15, speed: 7 });
+                        bullets.push({ x: player.x + player.width - 16, y: player.y, w: 6, h: 15, speed: 7 });
+                    } else {
+                        bullets.push({ x: player.x + player.width / 2 - 3, y: player.y, w: 6, h: 15, speed: 7 });
+                        bullets.push({ x: player.x + 5, y: player.y + 10, w: 6, h: 15, speed: 7, angle: -0.1 });
+                        bullets.push({ x: player.x + player.width - 11, y: player.y + 10, w: 6, h: 15, speed: 7, angle: 0.1 });
+                    }
+                    player.lastShot = now;
                 }
+            }
+
+            bullets.forEach((b, index) => {
+                b.y -= b.speed;
+                if (b.angle) b.x += b.angle * b.speed;
+                if (b.y < -20) bullets.splice(index, 1);
             });
 
-            autoFire();
-
-            bullets.forEach((b, idx) => {
-                b.y -= 12;
-                if(b.y < 0) bullets.splice(idx, 1);
-            });
-
-            enemyBullets.forEach((eb, idx) => {
-                eb.y += 5;
-                if(eb.y > canvas.height) enemyBullets.splice(idx, 1);
-                if(isColliding(eb, player)) {
-                    enemyBullets.splice(idx, 1);
+            enemyBullets.forEach((eb, index) => {
+                eb.y += eb.speed;
+                if (eb.y > canvas.height + 20) enemyBullets.splice(index, 1);
+                else if (checkCollision(eb, player)) {
+                    enemyBullets.splice(index, 1);
                     playerHit();
                 }
             });
 
-            powerUps.forEach((p, idx) => {
-                p.y += 2.2;
-                if(p.y > canvas.height) powerUps.splice(idx, 1);
-                if(isColliding(p, player)) {
-                    powerUps.splice(idx, 1);
-                    weaponLevel = 2;
+            if (boss) {
+                if (boss.y < 80) boss.y += 1;
+                else {
+                    boss.x += boss.speed * boss.dir;
+                    if (boss.x < 10 || boss.x > canvas.width - boss.width - 10) boss.dir *= -1;
                 }
+
+                if (Date.now() - boss.lastShot > 1200) {
+                    enemyBullets.push({ x: boss.x + boss.width / 2, y: boss.y + boss.height, width: 8, height: 18, speed: 4.5 });
+                    enemyBullets.push({ x: boss.x + 20, y: boss.y + boss.height - 10, width: 8, height: 18, speed: 4 });
+                    enemyBullets.push({ x: boss.x + boss.width - 28, y: boss.y + boss.height - 10, width: 8, height: 18, speed: 4 });
+                    boss.lastShot = Date.now();
+                }
+
+                bullets.forEach((b, bIdx) => {
+                    if (checkCollision(b, boss)) {
+                        bullets.splice(bIdx, 1);
+                        boss.hp--;
+                        bossFill.style.width = `${(boss.hp / boss.maxHp) * 100}%`;
+                        if (boss.hp <= 0) {
+                            score += 25;
+                            scoreDisplay.innerText = score;
+                            boss = null;
+                            bossActive = false;
+                            bossBar.style.display = "none";
+                            powerUps.push({ x: boss.x + boss.width / 2, y: boss.y, width: 25, height: 25, type: 'weapon' });
+                            setTimeout(spawnEnemyWave, 3000);
+                        }
+                    }
+                });
+
+                if (checkCollision(player, boss)) playerHit();
+            }
+
+            enemies.forEach((e, index) => {
+                e.y += e.speed;
+                if (e.y > canvas.height + 40) {
+                    enemies.splice(index, 1);
+                    if (enemies.length === 0) spawnEnemyWave();
+                }
+
+                if (Date.now() - e.lastShot > e.shootInterval && e.y > 0) {
+                    enemyBullets.push({ x: e.x + e.width / 2 - 3, y: e.y + e.height, width: 6, height: 14, speed: 4 });
+                    e.lastShot = Date.now();
+                }
+
+                bullets.forEach((b, bIndex) => {
+                    if (checkCollision(b, e)) {
+                        bullets.splice(bIndex, 1);
+                        e.hp--;
+                        if (e.hp <= 0) {
+                            enemies.splice(index, 1);
+                            score++;
+                            scoreDisplay.innerText = score;
+                            if (Math.random() < 0.12) {
+                                powerUps.push({ x: e.x, y: e.y, width: 22, height: 22, type: Math.random() < 0.4 ? 'life' : 'weapon' });
+                            }
+                            if (enemies.length === 0) spawnEnemyWave();
+                        }
+                    }
+                });
+
+                if (checkCollision(player, e)) { enemies.splice(index, 1); playerHit(); if (enemies.length === 0) spawnEnemyWave(); }
             });
 
-            if(!bossActive) {
-                let changeDir = false;
-                enemies.forEach(e => {
-                    e.x += e.stepX * e.direction;
-                    if(e.x <= 5 || e.x >= canvas.width - e.width - 5) changeDir = true;
-
-                    if(Date.now() - e.lastFired > 3200) {
-                        enemyBullets.push({ x: e.x + e.width/2 - 2, y: e.y + e.height, width: 5, height: 12 });
-                        e.lastFired = Date.now() + Math.random()*800;
-                    }
-
-                    if(isColliding(e, player)) {
-                        playerHit();
-                    }
-                });
-
-                if(changeDir) {
-                    enemies.forEach(e => { e.direction *= -1; e.y += 8; });
+            powerUps.forEach((p, index) => {
+                p.y += 2;
+                if (p.y > canvas.height + 30) powerUps.splice(index, 1);
+                else if (checkCollision(p, player)) {
+                    if (p.type === 'weapon') { if (weaponLevel < 3) weaponLevel++; }
+                    else { if (lives < 3) { lives++; updateLivesUI(); } }
+                    powerUps.splice(index, 1);
                 }
-
-                bullets.forEach((b, bIdx) => {
-                    enemies.forEach((e, eIdx) => {
-                        if(isColliding(b, e)) {
-                            bullets.splice(bIdx, 1);
-                            enemies.splice(eIdx, 1);
-                            score += 10;
-                            scoreDisplay.innerText = score;
-
-                            if(Math.random() < 0.22 && powerUps.length < 1) {
-                                powerUps.push({ x: e.x, y: e.y, width: 24, height: 24 });
-                            }
-
-                            if(score >= 150 && !bossActive) {
-                                triggerBossFight();
-                            }
-                        }
-                    });
-                });
-
-                if(enemies.length === 0 && !bossActive) spawnEnemyWave();
-
-            } else {
-                if(boss.y < 95) boss.y += 1.5;
-
-                boss.x += boss.speedX * boss.direction;
-                if(boss.x <= 10 || boss.x >= canvas.width - boss.width - 10) boss.direction *= -1;
-
-                if(Date.now() - boss.lastFired > 1300) {
-                    enemyBullets.push({ x: boss.x + 25, y: boss.y + boss.height, width: 5, height: 15 });
-                    enemyBullets.push({ x: boss.x + boss.width - 30, y: boss.y + boss.height, width: 5, height: 15 });
-                    boss.lastFired = Date.now();
-                }
-
-                bullets.forEach((b, bIdx) => {
-                    if(isColliding(b, boss)) {
-                        bullets.splice(bIdx, 1);
-                        boss.health -= 2;
-                        let hpPercent = Math.max(0, (boss.health / boss.maxHealth) * 100);
-                        bossFill.style.width = hpPercent + "%";
-
-                        if(boss.health <= 0) {
-                            score += 100;
-                            scoreDisplay.innerText = score;
-                            gameOver(true);
-                        }
-                    }
-                });
-            }
+            });
         }
 
         function playerHit() {
             lives--;
-            livesDisplay.innerText = "❤️".repeat(lives);
-            weaponLevel = 1;
-            if(lives <= 0) {
-                gameOver(false);
+            updateLivesUI();
+            if (lives <= 0) {
+                isGameOver = true;
+                gameActive = false;
+                overlayTitle.innerText = "GAME OVER";
+                overlayText.innerHTML = `Final Score: <span style='color:#fff; font-size:24px'>${score}</span><br>Galaxy defenses breached.`;
+                actionBtn.innerText = "REDEPLOY";
+                overlay.style.display = "block";
             }
         }
 
-        function gameOver(winStatus) {
-            isGameOver = true;
-            bossBar.style.display = "none";
-            overlay.style.display = "block";
-            if(winStatus) {
-                overlayTitle.innerText = "VICTORY!";
-                overlayTitle.style.color = "#00ffcc";
-                overlayText.innerText = "Galaxy Saved Successfully!\nFinal Score: " + score;
-            } else {
-                overlayTitle.innerText = "GAME OVER";
-                overlayTitle.style.color = "#ff3333";
-                overlayText.innerText = "Commander Suraj, You Failed!\nFinal Score: " + score;
-            }
-            actionBtn.innerText = "REPLAY";
+        function updateLivesUI() {
+            let hearts = "";
+            for (let i = 0; i < lives; i++) hearts += "❤️❤️❤️"[i * 2] + "❤️❤️❤️"[i * 2 + 1];
+            livesDisplay.innerText = hearts || "☠️";
+        }
+
+        function checkCollision(rect1, rect2) {
+            const r1x = rect1.x, r1y = rect1.y, r1w = rect1.w || rect1.width, r1h = rect1.h || rect1.height;
+            const r2x = rect2.x, r2y = rect2.y, r2w = rect2.w || rect2.width, r2h = rect2.h || rect2.height;
+            return r1x < r2x + r2w && r1x + r1w > r2x && r1y < r2y + r2h && r1y + r1h > r2y;
         }
 
         function draw() {
             ctx.clearRect(0, 0, canvas.width, canvas.height);
+            ctx.fillStyle = "#fff";
+            stars.forEach(s => ctx.fillRect(s.x, s.y, s.size, s.size));
 
-            // Planets
             planets.forEach(p => {
-                let gradient = ctx.createRadialGradient(p.x - p.radius*0.3, p.y - p.radius*0.3, p.radius*0.1, p.x, p.y, p.radius);
-                gradient.addColorStop(0, p.color1);
-                gradient.addColorStop(1, p.color2);
-                ctx.fillStyle = gradient;
-                ctx.beginPath();
-                ctx.arc(p.x, p.y, p.radius, 0, Math.PI*2);
-                ctx.fill();
-
-                if(p.spots) {
-                    ctx.fillStyle = "rgba(0,0,0,0.15)";
-                    ctx.beginPath(); ctx.arc(p.x - p.radius*0.2, p.y + p.radius*0.3, p.radius*0.2, 0, Math.PI*2); ctx.fill();
-                    ctx.beginPath(); ctx.arc(p.x + p.radius*0.4, p.y - p.radius*0.1, p.radius*0.15, 0, Math.PI*2); ctx.fill();
-                }
+                let grad = ctx.createRadialGradient(p.x - p.radius * 0.2, p.y - p.radius * 0.2, p.radius * 0.1, p.x, p.y, p.radius);
+                grad.addColorStop(0, p.color2);
+                grad.addColorStop(1, p.color1);
+                ctx.fillStyle = grad;
+                ctx.beginPath(); ctx.arc(p.x, p.y, p.radius, 0, Math.PI * 2); ctx.fill();
             });
 
-            // Stars
-            ctx.fillStyle = "rgba(255, 255, 255, 0.7)";
-            stars.forEach(star => ctx.fillRect(star.x, star.y, star.size, star.size));
-
-            if(!gameActive) return;
-
-            // Player Ship (Suraj's Advanced Fighter)
-            if(!isGameOver) {
-                ctx.shadowBlur = 15;
-                ctx.shadowColor = "#00d2ff";
-
-                let cx = player.x + player.width / 2;
-                let cy = player.y + player.height / 2;
-
-                ctx.fillStyle = "#0055aa";
+            if (!isGameOver && gameActive) {
+                ctx.fillStyle = "#00d2ff";
                 ctx.beginPath();
-                ctx.moveTo(cx, player.y + 10);
+                ctx.moveTo(player.x + player.width / 2, player.y);
                 ctx.lineTo(player.x, player.y + player.height);
-                ctx.lineTo(player.x + 12, player.y + player.height - 10);
-                ctx.closePath(); ctx.fill();
-
-                ctx.beginPath();
-                ctx.moveTo(cx, player.y + 10);
                 ctx.lineTo(player.x + player.width, player.y + player.height);
-                ctx.lineTo(player.x + player.width - 12, player.y + player.height - 10);
                 ctx.closePath(); ctx.fill();
 
-                ctx.fillStyle = "#e6f7ff";
-                ctx.beginPath();
-                ctx.moveTo(cx, player.y);
-                ctx.lineTo(cx - 14, player.y + player.height - 12);
-                ctx.lineTo(cx + 14, player.y + player.height - 12);
-                ctx.closePath(); ctx.fill();
-
-                ctx.fillStyle = "#00ffff";
-                ctx.beginPath();
-                ctx.arc(cx, cy + 8, 7, 0, Math.PI*2);
-                ctx.fill();
-
-                ctx.fillStyle = "#ff3333";
-                ctx.fillRect(player.x + 5, player.y + player.height - 12, 6, 12);
-                ctx.fillRect(player.x + player.width - 11, player.y + player.height - 12, 6, 12);
-
-                ctx.fillStyle = "#ff9900";
-                ctx.fillRect(cx - 5, player.y + player.height - 12, 10, Math.random()*12+6);
+                ctx.fillStyle = "#0066ff";
+                ctx.fillRect(player.x + player.width / 4, player.y + player.height * 0.6, player.width / 2, player.height * 0.4);
+                
+                ctx.fillStyle = "#ff6600";
+                ctx.fillRect(player.x + player.width / 2 - 4, player.y + player.height, 8, 10 + Math.random() * 10);
             }
 
-            // Lasers
-            ctx.fillStyle = "#00ffff";
-            ctx.shadowColor = "#00ffff";
-            bullets.forEach(b => ctx.fillRect(b.x, b.y, b.width, b.height));
+            ctx.fillStyle = "#00ffcc";
+            bullets.forEach(b => ctx.fillRect(b.x, b.y, b.w, b.h));
 
-            // Enemies
-            ctx.fillStyle = "#b300b3";
-            ctx.shadowColor = "#ff00ff";
-            enemies.forEach(e => {
-                ctx.beginPath();
-                ctx.moveTo(e.x + e.width/2, e.y + e.height);
-                ctx.lineTo(e.x, e.y);
-                ctx.lineTo(e.x + e.width, e.y);
-                ctx.closePath(); ctx.fill();
-                
-                ctx.fillStyle = "#00ff66";
-                ctx.fillRect(e.x + 8, e.y + 6, 4, 4);
-                ctx.fillRect(e.x + e.width - 12, e.y + 6, 4, 4);
-                ctx.fillStyle = "#b300b3";
-            });
-
-            // Enemy Lasers
-            ctx.fillStyle = "#ff2222";
-            ctx.shadowColor = "#ff2222";
+            ctx.fillStyle = "#ff3333";
             enemyBullets.forEach(eb => ctx.fillRect(eb.x, eb.y, eb.width, eb.height));
 
-            // Powerups
-            ctx.fillStyle = "#00ff00";
-            ctx.shadowColor = "#00ff00";
-            powerUps.forEach(p => {
-                ctx.beginPath(); ctx.arc(p.x + p.width/2, p.y + p.height/2, p.width/2, 0, Math.PI*2); ctx.fill();
-                ctx.fillStyle = "#000"; ctx.font = "bold 11px sans-serif"; ctx.fillText("WPN", p.x + 1, p.y + 16);
-                ctx.fillStyle = "#00ff00";
+            enemies.forEach(e => {
+                ctx.fillStyle = "#a900ff";
+                ctx.fillRect(e.x, e.y, e.width, e.height);
+                ctx.fillStyle = "#ff0055";
+                ctx.fillRect(e.x + 6, e.y + 10, 8, 8);
+                ctx.fillRect(e.x + e.width - 14, e.y + 10, 8, 8);
             });
 
-            // Boss
-            if(bossActive && boss) {
-                ctx.fillStyle = "#3a0007";
-                ctx.strokeStyle = "#ff0055";
-                ctx.lineWidth = 2;
-                ctx.shadowColor = "#ff0055";
-                
-                ctx.beginPath();
-                ctx.moveTo(boss.x + boss.width/2, boss.y + boss.height);
-                ctx.lineTo(boss.x, boss.y + 15);
-                ctx.lineTo(boss.x + 25, boss.y);
-                ctx.lineTo(boss.x + boss.width - 25, boss.y);
-                ctx.lineTo(boss.x + boss.width, boss.y + 15);
-                ctx.closePath(); ctx.fill(); ctx.stroke();
-
-                ctx.fillStyle = "#ffcc00";
-                ctx.fillRect(boss.x + 20, boss.y + boss.height - 5, 12, 12);
-                ctx.fillRect(boss.x + boss.width - 32, boss.y + boss.height - 5, 12, 12);
+            if (boss) {
+                ctx.fillStyle = "#ff0000";
+                ctx.fillRect(boss.x, boss.y, boss.width, boss.height);
+                ctx.fillStyle = "#ffff00";
+                ctx.fillRect(boss.x + 20, boss.y + 30, 20, 10);
+                ctx.fillRect(boss.x + boss.width - 40, boss.y + 30, 20, 10);
             }
 
-            ctx.shadowBlur = 0;
+            powerUps.forEach(p => {
+                ctx.fillStyle = p.type === 'weapon' ? "#ffff00" : "#ff00ff";
+                ctx.beginPath(); ctx.arc(p.x + p.width / 2, p.y + p.height / 2, p.width / 2, 0, Math.PI * 2); ctx.fill();
+            });
         }
 
-        function startGame() {
-            overlay.style.display = "none";
-            gameActive = true;
-            initGameObjects();
-        }
-
-        function loop() {
+        function animate() {
             update();
             draw();
-            requestAnimationFrame(loop);
+            requestAnimationFrame(animate);
         }
 
-        overlay.style.display = "block";
-        loop();
-
-        window.addEventListener('resize', resizeCanvas);
+        window.addEventListener("resize", resizeCanvas);
+        initPlanets();
+        draw();
     </script>
 </body>
 </html>
